@@ -1,19 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-
-import 'WelcomeSplash.dart';
+import 'package:my_first_app/services/auth_service.dart';
 
 class SignUpWeightGoalPage extends StatefulWidget {
   const SignUpWeightGoalPage({super.key});
 
   @override
-  State<SignUpWeightGoalPage> createState() => _SignUpWeightGoalPageState();
+  State<SignUpWeightGoalPage> createState() =>
+      _SignUpWeightGoalPageState();
 }
 
-class _SignUpWeightGoalPageState extends State<SignUpWeightGoalPage> {
-  // Separate controllers for current and target weight
-  final TextEditingController _currentWeightController = TextEditingController();
-  final TextEditingController _targetWeightController = TextEditingController();
+class _SignUpWeightGoalPageState
+    extends State<SignUpWeightGoalPage> {
+
+  final TextEditingController _currentWeightController =
+  TextEditingController();
+
+  final TextEditingController _targetWeightController =
+  TextEditingController();
+
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -22,37 +28,137 @@ class _SignUpWeightGoalPageState extends State<SignUpWeightGoalPage> {
     super.dispose();
   }
 
+  /////////////////////////////////////////////////////////////
+  /// FINAL STEP → REGISTER USER + SEND OTP
+  /////////////////////////////////////////////////////////////
+
+  Future<void> _finish() async {
+
+    final args =
+    ModalRoute.of(context)?.settings.arguments as Map?;
+
+    if (args == null || args["email"] == null) {
+      _showSnack("Signup data missing");
+      return;
+    }
+
+    final currentText =
+    _currentWeightController.text.trim();
+
+    final targetText =
+    _targetWeightController.text.trim();
+
+    if (currentText.isEmpty || targetText.isEmpty) {
+      _showSnack("Please fill both fields");
+      return;
+    }
+
+    final current = double.tryParse(currentText);
+    final target = double.tryParse(targetText);
+
+    if (current == null || current < 30 || current > 300) {
+      _showSnack("Enter valid current weight (30-300kg)");
+      return;
+    }
+
+    if (target == null || target < 30 || target > 300) {
+      _showSnack("Enter valid target weight (30-300kg)");
+      return;
+    }
+
+    if (current == target) {
+      _showSnack("Target must differ from current");
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+
+      final response = await AuthService.registerUser(
+        data: {
+          ...args,
+          "currentWeight": current,
+          "targetWeight": target,
+        },
+      );
+
+      print("REGISTER RESPONSE: $response");
+
+      if (!mounted) return;
+
+      if (response["success"] == true) {
+
+        /////////////////////////////////////////////////////////////
+        /// GO TO OTP SCREEN
+        /////////////////////////////////////////////////////////////
+
+        Navigator.pushNamed(
+          context,
+          '/otp',
+          arguments: {
+            "email": args["email"],
+          },
+        );
+
+      } else {
+
+        _showSnack(
+          response["message"] ?? "Registration failed",
+        );
+      }
+
+    } catch (e) {
+      _showSnack("Network error");
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  /////////////////////////////////////////////////////////////
+
+  void _showSnack(String msg) {
+    ScaffoldMessenger.of(context)
+        .showSnackBar(
+      SnackBar(content: Text(msg)),
+    );
+  }
+
+  /////////////////////////////////////////////////////////////
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
-      body: Center(
+
+      body: SafeArea(
         child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 30),
+          padding:
+          const EdgeInsets.symmetric(horizontal: 30),
+
+          child: SizedBox(
+            height:
+            MediaQuery.of(context).size.height * .9,
+
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisAlignment:
+              MainAxisAlignment.center,
               children: [
+
                 const Text(
                   "SET YOUR TARGET",
                   style: TextStyle(
                     color: Colors.red,
                     fontWeight: FontWeight.bold,
-                    fontSize: 25,
-                    letterSpacing: 1.5,
+                    fontSize: 26,
                   ),
                 ),
-                const SizedBox(height: 10),
-                const Text(
-                  "Tell us where you are and where you want to be.",
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.white70, fontSize: 14),
-                ),
+
                 const SizedBox(height: 40),
 
-                // Current Weight Field
-                _buildWeightField(
+                _weightField(
                   label: "CURRENT WEIGHT",
                   controller: _currentWeightController,
                   icon: Icons.scale,
@@ -60,8 +166,7 @@ class _SignUpWeightGoalPageState extends State<SignUpWeightGoalPage> {
 
                 const SizedBox(height: 25),
 
-                // Target Weight Field
-                _buildWeightField(
+                _weightField(
                   label: "TARGET WEIGHT",
                   controller: _targetWeightController,
                   icon: Icons.flag,
@@ -69,30 +174,22 @@ class _SignUpWeightGoalPageState extends State<SignUpWeightGoalPage> {
 
                 const SizedBox(height: 50),
 
-                // Navigation Row
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    _buildActionButton("Prev", Icons.arrow_back, () {
-                      Navigator.pop(context);
-                    }),
-                    const SizedBox(width: 16),
-                    _buildActionButton("Next", Icons.arrow_forward, () {
-                      String current = _currentWeightController.text;
-                      String target = _targetWeightController.text;
-
-                      if (current.isNotEmpty && target.isNotEmpty) {
-                        Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => Welcomesplash()));
-                        print("Current: $current kg, Target: $target kg");
-                        // Navigator.push(context, MaterialPageRoute(builder: (context) => const NextPage()));
-                      } else {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text("Please fill in both fields")),
-                        );
-                      }
-                    }),
-                  ],
-                )
+                SizedBox(
+                  width: double.infinity,
+                  height: 55,
+                  child: ElevatedButton(
+                    onPressed:
+                    _isLoading ? null : _finish,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red,
+                    ),
+                    child: _isLoading
+                        ? const CircularProgressIndicator(
+                      color: Colors.white,
+                    )
+                        : const Text("FINISH"),
+                  ),
+                ),
               ],
             ),
           ),
@@ -101,65 +198,66 @@ class _SignUpWeightGoalPageState extends State<SignUpWeightGoalPage> {
     );
   }
 
-  // Custom helper for weight input fields
-  Widget _buildWeightField({
+  /////////////////////////////////////////////////////////////
+
+  Widget _weightField({
     required String label,
     required TextEditingController controller,
     required IconData icon,
   }) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment:
+      CrossAxisAlignment.start,
       children: [
+
         Text(
           label,
-          style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 12),
+          style: const TextStyle(
+            color: Colors.red,
+            fontWeight: FontWeight.bold,
+            fontSize: 12,
+          ),
         ),
+
         const SizedBox(height: 8),
+
         TextField(
           controller: controller,
           cursorColor: Colors.red,
-          style: const TextStyle(color: Colors.white, fontSize: 18),
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          style:
+          const TextStyle(color: Colors.white),
+          keyboardType:
+          const TextInputType.numberWithOptions(
+              decimal: true),
           inputFormatters: [
-            FilteringTextInputFormatter.allow(RegExp(r'(^\d*\.?\d*)')),
+            FilteringTextInputFormatter.allow(
+              RegExp(r'^\d*\.?\d{0,1}'),
+            ),
           ],
           decoration: InputDecoration(
-            hintText: "00.0",
-            hintStyle: const TextStyle(color: Colors.white24),
-            prefixIcon: Icon(icon, color: Colors.white),
+            prefixIcon:
+            Icon(icon, color: Colors.white),
             suffixText: "kg",
-            suffixStyle: const TextStyle(color: Colors.red),
-            enabledBorder: const OutlineInputBorder(
-              borderSide: BorderSide(color: Colors.white24, width: 1),
+            enabledBorder:
+            OutlineInputBorder(
+              borderRadius:
+              BorderRadius.circular(12),
+              borderSide:
+              const BorderSide(
+                  color: Colors.white24),
             ),
-            focusedBorder: const OutlineInputBorder(
-              borderSide: BorderSide(color: Colors.red, width: 2),
+            focusedBorder:
+            OutlineInputBorder(
+              borderRadius:
+              BorderRadius.circular(12),
+              borderSide:
+              const BorderSide(
+                  color: Colors.red,
+                  width: 2),
             ),
           ),
         ),
       ],
-    );
-  }
-
-  // Reuse your navigation button style
-  Widget _buildActionButton(String label, IconData icon, VoidCallback onPressed) {
-    return SizedBox(
-      width: 140,
-      height: 50,
-      child: ElevatedButton.icon(
-        onPressed: onPressed,
-        icon: Icon(icon, color: Colors.white, size: 18),
-        label: Text(
-          label,
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-        ),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.red,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(5),
-          ),
-        ),
-      ),
     );
   }
 }

@@ -1,135 +1,208 @@
 import 'package:flutter/material.dart';
 
-import 'SignUpExperience.dart';
+enum GoalType {
+  weekly,
+  monthly,
+}
 
 class SignUpGoalPage extends StatefulWidget {
   const SignUpGoalPage({super.key});
 
   @override
-  State<SignUpGoalPage> createState() => _SignUpGoalPageState();
+  State<SignUpGoalPage> createState() =>
+      _SignUpGoalPageState();
 }
 
-class _SignUpGoalPageState extends State<SignUpGoalPage> {
-  // Variable to store which goal is selected
-  String selectedGoal = "";
+class _SignUpGoalPageState
+    extends State<SignUpGoalPage> {
+
+  GoalType? selectedGoal;
+
+  /////////////////////////////////////////////////////////////
+  /// NEXT STEP
+  /////////////////////////////////////////////////////////////
+
+  void _finishStep() {
+
+    if (selectedGoal == null) {
+      _showSnack("Please select a goal");
+      return;
+    }
+
+    /////////////////////////////////////////////////////////////
+    /// RECEIVE PREVIOUS SIGNUP DATA
+    /////////////////////////////////////////////////////////////
+
+    final args =
+    ModalRoute.of(context)!.settings.arguments as Map?;
+
+    if (args == null) {
+      _showSnack("Signup data missing");
+      return;
+    }
+
+    final goalValue =
+    selectedGoal == GoalType.weekly
+        ? "weekly"
+        : "monthly";
+
+    /////////////////////////////////////////////////////////////
+    /// PASS EVERYTHING FORWARD CLEANLY
+    /////////////////////////////////////////////////////////////
+
+    Navigator.pushNamed(
+      context,
+      '/signup-experience',
+      arguments: {
+        ...args,
+        "goal": goalValue,
+      },
+    );
+  }
+
+  /////////////////////////////////////////////////////////////
+
+  void _showSnack(String msg) {
+    ScaffoldMessenger.of(context)
+        .showSnackBar(
+      SnackBar(content: Text(msg)),
+    );
+  }
+
+  /////////////////////////////////////////////////////////////
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+
       backgroundColor: Colors.black,
-      body: Center(
+
+      body: SafeArea(
         child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Padding(
-                padding: EdgeInsets.all(10.0),
-                child: Text(
-                  "Monthly / Weekly Goal?",
+          padding:
+          const EdgeInsets.symmetric(horizontal: 30),
+
+          child: SizedBox(
+            height:
+            MediaQuery.of(context).size.height * .9,
+
+            child: Column(
+              mainAxisAlignment:
+              MainAxisAlignment.center,
+              children: [
+
+                const Text(
+                  "MONTHLY OR WEEKLY GOAL?",
                   style: TextStyle(
                     color: Colors.red,
                     fontWeight: FontWeight.bold,
-                    fontSize: 25,
+                    fontSize: 26,
                   ),
                 ),
-              ),
-              const SizedBox(height: 20),
 
-              // Goal Options Row
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  _buildActionButtonForOption("Weekly", Icons.trending_up, () {
-                    setState(() {
-                      selectedGoal = "Weekly";
-                    });
-                  }, selectedGoal == "Weekly"),
-                  const SizedBox(width: 20),
-                  _buildActionButtonForOption("Monthly", Icons.calendar_month, () {
-                    setState(() {
-                      selectedGoal = "Monthly";
-                    });
-                  }, selectedGoal == "Monthly"),
-                ],
-              ),
+                const SizedBox(height: 40),
 
-              const SizedBox(height: 40),
-
-              // Navigation Row
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                Row(
                   children: [
-                    _buildActionButton("Prev", Icons.arrow_back, () {
-                      Navigator.pop(context); // Go back to Height screen
-                    }),
-                    const SizedBox(width: 16),
-                    _buildActionButton("Finish", Icons.check, () {
-                      if (selectedGoal.isNotEmpty) {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => const SignUpExperiencePage()),
-                        );
-                        // Logic to complete registration or go to Dashboard
-                      } else {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text("Please select a goal")),
-                        );
-                      }
-                    }),
+
+                    Expanded(
+                      child: _goalButton(
+                        label: "Weekly",
+                        icon: Icons.trending_up,
+                        isSelected:
+                        selectedGoal ==
+                            GoalType.weekly,
+                        onTap: () {
+                          setState(() {
+                            selectedGoal =
+                                GoalType.weekly;
+                          });
+                        },
+                      ),
+                    ),
+
+                    const SizedBox(width: 20),
+
+                    Expanded(
+                      child: _goalButton(
+                        label: "Monthly",
+                        icon: Icons.calendar_month,
+                        isSelected:
+                        selectedGoal ==
+                            GoalType.monthly,
+                        onTap: () {
+                          setState(() {
+                            selectedGoal =
+                                GoalType.monthly;
+                          });
+                        },
+                      ),
+                    ),
                   ],
                 ),
-              )
-            ],
+
+                const SizedBox(height: 60),
+
+                Row(
+                  children: [
+
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          Navigator.pop(context);
+                        },
+                        icon: const Icon(Icons.arrow_back),
+                        label: const Text("Prev"),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor:
+                          Colors.grey[900],
+                          minimumSize:
+                          const Size(double.infinity, 55),
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(width: 16),
+
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: _finishStep,
+                        icon: const Icon(Icons.arrow_forward),
+                        label: const Text("Next"),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red,
+                          minimumSize:
+                          const Size(double.infinity, 55),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  // Action Button for Goal (Changes color when selected)
-  Widget _buildActionButtonForOption(String label, IconData icon, VoidCallback onPressed, bool isSelected) {
-    return SizedBox(
-      width: 140,
-      height: 50,
-      child: ElevatedButton.icon(
-        onPressed: onPressed,
-        icon: Icon(icon, color: Colors.white, size: 18),
-        label: Text(
-          label,
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-        ),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: isSelected ? Colors.red : Colors.grey[900],
-          side: BorderSide(color: isSelected ? Colors.white : Colors.red, width: 2),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(5),
-          ),
-        ),
-      ),
-    );
-  }
+  /////////////////////////////////////////////////////////////
+  /// GOAL BUTTON
+  /////////////////////////////////////////////////////////////
 
-  // Navigation Button (Prev/Finish)
-  Widget _buildActionButton(String label, IconData icon, VoidCallback onPressed) {
-    return SizedBox(
-      width: 140,
-      height: 50,
-      child: ElevatedButton.icon(
-        onPressed: onPressed,
-        icon: Icon(icon, color: Colors.white, size: 18),
-        label: Text(
-          label,
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-        ),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.red,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(5),
-          ),
-        ),
+  Widget _goalButton({
+    required String label,
+    required IconData icon,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return ElevatedButton.icon(
+      onPressed: onTap,
+      icon: Icon(icon, color: Colors.white),
+      label: Text(label),
+      style: ElevatedButton.styleFrom(
+        backgroundColor:
+        isSelected ? Colors.red : Colors.grey[900],
       ),
     );
   }

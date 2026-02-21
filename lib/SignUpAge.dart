@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import 'SignUpWeight.dart';
-
 class SignUpAgePage extends StatefulWidget {
   const SignUpAgePage({super.key});
 
@@ -11,7 +9,9 @@ class SignUpAgePage extends StatefulWidget {
 }
 
 class _SignUpAgePageState extends State<SignUpAgePage> {
-  final TextEditingController _ageController = TextEditingController();
+
+  final TextEditingController _ageController =
+  TextEditingController();
 
   @override
   void dispose() {
@@ -19,104 +19,175 @@ class _SignUpAgePageState extends State<SignUpAgePage> {
     super.dispose();
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      body: Center(
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Text(
-                "HOW OLD ARE YOU?",
-                style: TextStyle(
-                  color: Colors.red,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 25,
-                  letterSpacing: 1.2,
-                ),
-              ),
-              const SizedBox(height: 30),
+  /////////////////////////////////////////////////////////////
+  /// NEXT STEP
+  /////////////////////////////////////////////////////////////
 
-              // Age Input Field
-              SizedBox(
-                width: 300,
-                child: TextField(
-                  controller: _ageController,
-                  cursorColor: Colors.red,
-                  style: const TextStyle(color: Colors.white, fontSize: 18),
-                  keyboardType: TextInputType.number,
-                  inputFormatters: [
-                    FilteringTextInputFormatter.digitsOnly, // Age doesn't need decimals
-                  ],
-                  decoration: const InputDecoration(
-                    hintText: "Enter your age",
-                    hintStyle: TextStyle(color: Colors.white38),
-                    prefixIcon: Icon(Icons.cake, color: Colors.white),
-                    enabledBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: Colors.white24, width: 1),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: Colors.red, width: 2),
-                    ),
-                  ),
-                ),
-              ),
+  void _goNext() {
 
-              const SizedBox(height: 40),
+    final ageText = _ageController.text.trim();
 
-              // Navigation Row
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    _buildActionButton("Prev", Icons.arrow_back, () {
-                      Navigator.pop(context);
-                    }),
-                    const SizedBox(width: 16),
-                    _buildActionButton("Next", Icons.arrow_forward, () {
-                      String ageValue = _ageController.text;
-                      if (ageValue.isNotEmpty) {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => const SignUpWeightGoalPage()),
-                        );
+    if (ageText.isEmpty) {
+      _showSnack("Please enter your age");
+      return;
+    }
 
-                        // Logic to navigate to Weight or Gender
-                      } else {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text("Please enter your age")),
-                        );
-                      }
-                    }),
-                  ],
-                ),
-              )
-            ],
-          ),
-        ),
-      ),
+    final age = int.tryParse(ageText);
+
+    if (age == null || age < 12 || age > 80) {
+      _showSnack("Enter a valid age (12 - 80)");
+      return;
+    }
+
+    /////////////////////////////////////////////////////////////
+    /// RECEIVE PREVIOUS SIGNUP DATA
+    /////////////////////////////////////////////////////////////
+
+    final args =
+    ModalRoute.of(context)!.settings.arguments as Map?;
+
+    if (args == null) {
+      _showSnack("Signup data missing");
+      return;
+    }
+
+    /////////////////////////////////////////////////////////////
+    /// PASS EVERYTHING FORWARD CLEANLY
+    /////////////////////////////////////////////////////////////
+
+    Navigator.pushNamed(
+      context,
+      '/signup-weight',
+      arguments: {
+        ...args,
+        "age": age,
+      },
     );
   }
 
-  Widget _buildActionButton(String label, IconData icon, VoidCallback onPressed) {
-    return SizedBox(
-      width: 140,
-      height: 50,
-      child: ElevatedButton.icon(
-        onPressed: onPressed,
-        icon: Icon(icon, color: Colors.white, size: 18),
-        label: Text(
-          label,
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-        ),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.red,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(5),
+  /////////////////////////////////////////////////////////////
+
+  void _showSnack(String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(msg)),
+    );
+  }
+
+  /////////////////////////////////////////////////////////////
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+
+      backgroundColor: Colors.black,
+
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding:
+          const EdgeInsets.symmetric(horizontal: 30),
+
+          child: SizedBox(
+            height:
+            MediaQuery.of(context).size.height * .9,
+
+            child: Column(
+              mainAxisAlignment:
+              MainAxisAlignment.center,
+              children: [
+
+                const Text(
+                  "HOW OLD ARE YOU?",
+                  style: TextStyle(
+                    color: Colors.red,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 26,
+                    letterSpacing: 1.2,
+                  ),
+                ),
+
+                const SizedBox(height: 40),
+
+                TextField(
+                  controller: _ageController,
+                  cursorColor: Colors.red,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                  ),
+                  keyboardType:
+                  TextInputType.number,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly,
+                    LengthLimitingTextInputFormatter(2),
+                  ],
+                  decoration: InputDecoration(
+                    hintText: "Enter your age",
+                    hintStyle:
+                    const TextStyle(color: Colors.white38),
+                    prefixIcon:
+                    const Icon(Icons.cake, color: Colors.white),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius:
+                      BorderRadius.circular(12),
+                      borderSide:
+                      const BorderSide(color: Colors.white24),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius:
+                      BorderRadius.circular(12),
+                      borderSide:
+                      const BorderSide(
+                          color: Colors.red, width: 2),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 50),
+
+                Row(
+                  children: [
+
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          Navigator.pop(context);
+                        },
+                        icon:
+                        const Icon(Icons.arrow_back),
+                        label:
+                        const Text("Prev"),
+                        style:
+                        ElevatedButton.styleFrom(
+                          backgroundColor:
+                          Colors.grey[900],
+                          minimumSize:
+                          const Size(double.infinity, 55),
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(width: 16),
+
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: _goNext,
+                        icon:
+                        const Icon(Icons.arrow_forward),
+                        label:
+                        const Text("Next"),
+                        style:
+                        ElevatedButton.styleFrom(
+                          backgroundColor:
+                          Colors.red,
+                          minimumSize:
+                          const Size(double.infinity, 55),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),

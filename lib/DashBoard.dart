@@ -1,142 +1,268 @@
 import 'package:flutter/material.dart';
 
+///////////////////////////////////////////////////////////////
+/// MODEL (BACKEND READY)
+///////////////////////////////////////////////////////////////
+
+class Mission {
+  final int id;
+  final String status;
+  /// expected from backend:
+  /// completed | active | locked
+
+  Mission({
+    required this.id,
+    required this.status,
+  });
+}
+
+///////////////////////////////////////////////////////////////
+/// DASHBOARD
+///////////////////////////////////////////////////////////////
+
 class DashboardPage extends StatelessWidget {
   const DashboardPage({super.key});
+
+  /////////////////////////////////////////////////////////////
+  /// TEMP DATA (DELETE WHEN API COMES)
+  /////////////////////////////////////////////////////////////
+
+  List<Mission> get missions => List.generate(
+    9,
+        (index) {
+      if (index < 5) {
+        return Mission(id: index, status: "completed");
+      } else if (index == 5) {
+        return Mission(id: index, status: "active");
+      } else {
+        return Mission(id: index, status: "locked");
+      }
+    },
+  );
+
+  /////////////////////////////////////////////////////////////
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black, // Dark green background from your sketch
-      appBar: AppBar(
-        title: const Text("DASHBOARD", style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.black,
-        elevation: 0,
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // --- SECTION 1: BASIC INFO ---
-            const Text("Basic Info", style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 10),
-            Container(
-              padding: const EdgeInsets.all(15),
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.white70),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Column(
+      backgroundColor: Colors.black,
+
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding:
+          const EdgeInsets.symmetric(horizontal: 20),
+
+          child: Column(
+            crossAxisAlignment:
+            CrossAxisAlignment.start,
+            children: [
+
+              ////////////////////////////////////////////////////
+              /// HEADER
+              ////////////////////////////////////////////////////
+
+              const SizedBox(height: 10),
+
+              Row(
+                mainAxisAlignment:
+                MainAxisAlignment.spaceBetween,
                 children: [
-                  Row(
+
+                  Container(
+                    padding:
+                    const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6),
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                          color: Colors.yellow),
+                    ),
+                    child: const Text(
+                      "PRO TIPS",
+                      style: TextStyle(
+                        color: Colors.yellow,
+                        fontWeight:
+                        FontWeight.bold,
+                      ),
+                    ),
+                  ),
+
+                  const Row(
                     children: [
-                      const Icon(Icons.person_outline, color: Colors.red, size: 50),
-                      const SizedBox(width: 15),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _infoLine(),
-                            const SizedBox(height: 8),
-                            _infoLine(),
-                          ],
-                        ),
-                      )
+                      Text("Account",
+                          style: TextStyle(
+                              color:
+                              Colors.white)),
+                      SizedBox(width: 8),
+                      Icon(Icons.person,
+                          color: Colors.white)
                     ],
                   ),
-                  const SizedBox(height: 20),
-                  const Divider(color: Colors.white24),
-                  const SizedBox(height: 10),
-                  // Grid-like info lines
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Column(children: [_infoLine(width: 60), const SizedBox(height: 5), _infoLine(width: 60)]),
-                      Column(children: [_infoLine(width: 60), const SizedBox(height: 5), _infoLine(width: 60)]),
-                      Column(children: [_infoLine(width: 40), const SizedBox(height: 5), _infoLine(width: 40)]),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                  // Buttons: EDIT and SAVE
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      _actionButton("EDIT"),
-                      _actionButton("SAVE"),
-                    ],
-                  )
                 ],
               ),
-            ),
 
-            const SizedBox(height: 30),
-            const Divider(color: Colors.white24),
+              const SizedBox(height: 25),
 
-            // --- SECTION 2: PERSONAL GALLERY ---
-            const Text("Personal Gallery", style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 15),
-            Container(
-              width: double.infinity,
-              height: 100,
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.red, width: 2),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Center(
+              const Divider(color: Colors.white24),
+
+              ////////////////////////////////////////////////////
+              /// TITLE
+              ////////////////////////////////////////////////////
+
+              const SizedBox(height: 15),
+
+              const Center(
                 child: Text(
-                  "Transformation Journey",
-                  style: TextStyle(color: Colors.red, fontSize: 18, fontWeight: FontWeight.bold),
+                  "Today's Task",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 26,
+                    fontWeight:
+                    FontWeight.w600,
+                    fontStyle:
+                    FontStyle.italic,
+                  ),
                 ),
               ),
-            ),
 
-            const SizedBox(height: 30),
-            const Divider(color: Colors.white24),
+              const SizedBox(height: 15),
 
-            // --- SECTION 3: MENU LIST ---
-            _menuItem(Icons.feedback_outlined, "Feedback"),
-            _menuItem(Icons.chat_bubble_outline, "Feedback", hasArrow: true),
-            _menuItem(Icons.share_outlined, "Social Media", hasArrow: true),
-            _menuItem(Icons.star_border, "Rating", hasArrow: true),
-          ],
+              const Divider(color: Colors.white24),
+
+              const SizedBox(height: 30),
+
+              ////////////////////////////////////////////////////
+              /// MISSION GRID (BACKEND DRIVEN)
+              ////////////////////////////////////////////////////
+
+              GridView.builder(
+                shrinkWrap: true,
+                physics:
+                const NeverScrollableScrollPhysics(),
+
+                itemCount: missions.length,
+
+                gridDelegate:
+                const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 3,
+                  crossAxisSpacing: 14,
+                  mainAxisSpacing: 14,
+                ),
+
+                itemBuilder: (context, index) {
+
+                  final mission =
+                  missions[index];
+
+                  return _missionCard(mission);
+                },
+              ),
+
+              ////////////////////////////////////////////////////
+              /// GALLERY
+              ////////////////////////////////////////////////////
+
+              const SizedBox(height: 40),
+
+              const Divider(color: Colors.white24),
+
+              const SizedBox(height: 20),
+
+              const Text(
+                "Personal Gallery",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 22,
+                  fontWeight:
+                  FontWeight.bold,
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
+              GestureDetector(
+                onTap: () {
+
+                  /// Later:
+                  /// open gallery screen
+
+                },
+                child: Container(
+                  height: 130,
+                  width: double.infinity,
+
+                  decoration: BoxDecoration(
+                    borderRadius:
+                    BorderRadius.circular(
+                        18),
+                    border: Border.all(
+                        color: Colors.red,
+                        width: 2),
+                  ),
+
+                  child: const Center(
+                    child: Text(
+                      "Transformation Journey",
+                      style: TextStyle(
+                        color: Colors.red,
+                        fontSize: 20,
+                        fontWeight:
+                        FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 40),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  // Helper for those white lines in your sketch
-  Widget _infoLine({double width = 100}) {
-    return Container(
-      height: 2,
-      width: width,
-      color: Colors.white38,
-    );
-  }
+  /////////////////////////////////////////////////////////////
+  /// MISSION CARD
+  /////////////////////////////////////////////////////////////
 
-  // Helper for Edit/Save buttons
-  Widget _actionButton(String label) {
+  Widget _missionCard(Mission mission) {
+
+    Color borderColor;
+    String text;
+
+    switch (mission.status) {
+
+      case "completed":
+        borderColor = Colors.blue;
+        text = "Completed";
+        break;
+
+      case "active":
+        borderColor = Colors.green;
+        text = "START";
+        break;
+
+      default:
+        borderColor = Colors.red;
+        text = "LOCK";
+    }
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 8),
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.white),
-        borderRadius: BorderRadius.circular(4),
+        border:
+        Border.all(color: borderColor, width: 2),
+        borderRadius:
+        BorderRadius.circular(8),
       ),
-      child: Text(label, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-    );
-  }
-
-  // Helper for the bottom list items
-  Widget _menuItem(IconData icon, String title, {bool hasArrow = false}) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12.0),
-      child: Row(
-        children: [
-          Icon(icon, color: Colors.red),
-          const SizedBox(width: 20),
-          Text(title, style: const TextStyle(color: Colors.white, fontSize: 16)),
-          const Spacer(),
-          if (hasArrow) const Icon(Icons.arrow_forward_ios, color: Colors.white, size: 16),
-        ],
+      child: Center(
+        child: Text(
+          text,
+          style: TextStyle(
+            color: borderColor,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
       ),
     );
   }

@@ -1,125 +1,210 @@
 import 'package:flutter/material.dart';
-
-import 'SignUpGymAvilable.dart';
+import 'package:flutter/services.dart';
 
 class SignUpExperiencePage extends StatefulWidget {
   const SignUpExperiencePage({super.key});
 
   @override
-  State<SignUpExperiencePage> createState() => _SignUpExperiencePageState();
+  State<SignUpExperiencePage> createState() =>
+      _SignUpExperiencePageState();
 }
 
-class _SignUpExperiencePageState extends State<SignUpExperiencePage> {
-  // Controller to capture the input text
-  final TextEditingController _experienceController = TextEditingController();
+class _SignUpExperiencePageState
+    extends State<SignUpExperiencePage> {
+
+  final TextEditingController _experienceController =
+  TextEditingController();
 
   @override
   void dispose() {
-    _experienceController.dispose(); // Always dispose controllers to save memory
+    _experienceController.dispose();
     super.dispose();
   }
+
+  /////////////////////////////////////////////////////////////
+  /// NEXT STEP
+  /////////////////////////////////////////////////////////////
+
+  void _goNext() {
+
+    final text = _experienceController.text.trim();
+
+    if (text.isEmpty) {
+      _showSnack("Please enter your experience");
+      return;
+    }
+
+    final years = int.tryParse(text);
+
+    if (years == null || years < 0 || years > 50) {
+      _showSnack("Enter valid experience (0 - 50 years)");
+      return;
+    }
+
+    /////////////////////////////////////////////////////////////
+    /// RECEIVE PREVIOUS SIGNUP DATA
+    /////////////////////////////////////////////////////////////
+
+    final args =
+    ModalRoute.of(context)!.settings.arguments as Map?;
+
+    if (args == null) {
+      _showSnack("Signup data missing");
+      return;
+    }
+
+    /////////////////////////////////////////////////////////////
+    /// PASS EVERYTHING FORWARD CLEANLY
+    /////////////////////////////////////////////////////////////
+
+    Navigator.pushNamed(
+      context,
+      '/signup-gym',
+      arguments: {
+        ...args,
+        "experience": years,
+      },
+    );
+  }
+
+  /////////////////////////////////////////////////////////////
+
+  void _showSnack(String msg) {
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(msg)));
+  }
+
+  /////////////////////////////////////////////////////////////
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+
       backgroundColor: Colors.black,
-      body: Center(
+
+      body: SafeArea(
         child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Padding(
-                padding: EdgeInsets.all(10.0),
-                child: Text(
-                  "How Much Experience?",
+          padding:
+          const EdgeInsets.symmetric(horizontal: 30),
+
+          child: SizedBox(
+            height:
+            MediaQuery.of(context).size.height * .9,
+
+            child: Column(
+              mainAxisAlignment:
+              MainAxisAlignment.center,
+              children: [
+
+                const Text(
+                  "HOW MUCH EXPERIENCE?",
                   style: TextStyle(
                     color: Colors.red,
                     fontWeight: FontWeight.bold,
-                    fontSize: 25,
+                    fontSize: 26,
                   ),
                 ),
-              ),
-              const SizedBox(height: 20),
 
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: SizedBox(
-                  width: 300,
-                  child: TextField(
-                    controller: _experienceController,
-                    cursorColor: Colors.red,
-                    style: const TextStyle(color: Colors.white, fontSize: 18),
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                      hintText: "Experience",
-                      hintStyle: TextStyle(color: Colors.white38),
-                      prefixIcon: Icon(Icons.timelapse, color: Colors.white),
-                      suffixText: "years",
-                      suffixStyle: TextStyle(color: Colors.red),
-                      enabledBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: Colors.white24, width: 1),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: Colors.red, width: 2),
-                      ),
+                const SizedBox(height: 40),
+
+                TextField(
+                  controller: _experienceController,
+                  cursorColor: Colors.red,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                  ),
+                  keyboardType:
+                  TextInputType.number,
+                  inputFormatters: [
+                    FilteringTextInputFormatter
+                        .digitsOnly,
+                    LengthLimitingTextInputFormatter(2),
+                  ],
+                  decoration: InputDecoration(
+                    hintText: "Experience",
+                    hintStyle:
+                    const TextStyle(
+                        color: Colors.white38),
+                    prefixIcon: const Icon(
+                      Icons.timelapse,
+                      color: Colors.white,
+                    ),
+                    suffixText: "years",
+                    suffixStyle:
+                    const TextStyle(
+                        color: Colors.red),
+                    enabledBorder:
+                    OutlineInputBorder(
+                      borderRadius:
+                      BorderRadius.circular(12),
+                      borderSide:
+                      const BorderSide(
+                          color:
+                          Colors.white24),
+                    ),
+                    focusedBorder:
+                    OutlineInputBorder(
+                      borderRadius:
+                      BorderRadius.circular(12),
+                      borderSide:
+                      const BorderSide(
+                          color: Colors.red,
+                          width: 2),
                     ),
                   ),
                 ),
-              ),
 
-              const SizedBox(height: 40),
+                const SizedBox(height: 50),
 
-              // Navigation Row
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                Row(
                   children: [
-                    _buildActionButton("Prev", Icons.arrow_back, () {
-                      Navigator.pop(context);
-                    }),
+
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          Navigator.pop(context);
+                        },
+                        icon:
+                        const Icon(Icons.arrow_back),
+                        label:
+                        const Text("Prev"),
+                        style:
+                        ElevatedButton.styleFrom(
+                          backgroundColor:
+                          Colors.grey[900],
+                          minimumSize:
+                          const Size(
+                              double.infinity,
+                              55),
+                        ),
+                      ),
+                    ),
+
                     const SizedBox(width: 16),
-                    _buildActionButton("Next", Icons.arrow_forward, () {
-                      String experience = _experienceController.text;
-                      if (experience.isNotEmpty) {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => const SignUpGymStatusPage()),
-                        );
-                        // Add navigation to next screen here
-                      } else {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text("Please enter your experience")),
-                        );
-                      }
-                    }),
+
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: _goNext,
+                        icon: const Icon(
+                            Icons.arrow_forward),
+                        label:
+                        const Text("Next"),
+                        style:
+                        ElevatedButton.styleFrom(
+                          backgroundColor:
+                          Colors.red,
+                          minimumSize:
+                          const Size(
+                              double.infinity,
+                              55),
+                        ),
+                      ),
+                    ),
                   ],
                 ),
-              )
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  // Navigation Button Helper
-  Widget _buildActionButton(String label, IconData icon, VoidCallback onPressed) {
-    return SizedBox(
-      width: 140,
-      height: 50,
-      child: ElevatedButton.icon(
-        onPressed: onPressed,
-        icon: Icon(icon, color: Colors.white, size: 18),
-        label: Text(
-          label,
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-        ),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.red,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(5),
+              ],
+            ),
           ),
         ),
       ),

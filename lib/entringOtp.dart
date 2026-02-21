@@ -1,90 +1,277 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:my_first_app/services/auth_service.dart';
 
-void main() {
-  runApp(MyApp());
+class OtpScreen extends StatefulWidget {
+  const OtpScreen({super.key});
+
+  @override
+  State<OtpScreen> createState() => _OtpScreenState();
 }
 
-class MyApp extends StatelessWidget {
+class _OtpScreenState extends State<OtpScreen> {
+
+  final TextEditingController _otpController =
+  TextEditingController();
+
+  bool _isLoading = false;
+  bool _isResending = false;
+
+  late String email;
+
+  /////////////////////////////////////////////////////////////
+  /// GET EMAIL FROM PREVIOUS SCREEN
+  /////////////////////////////////////////////////////////////
+
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: HomePage(),
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    final args =
+    ModalRoute.of(context)?.settings.arguments as Map?;
+
+    email = args?["email"] ?? "";
+  }
+
+  @override
+  void dispose() {
+    _otpController.dispose();
+    super.dispose();
+  }
+
+  /////////////////////////////////////////////////////////////
+  /// VERIFY OTP
+  /////////////////////////////////////////////////////////////
+
+  Future<void> _verifyOtp() async {
+
+    final otp = _otpController.text.trim();
+
+    if (otp.length != 6) {
+      _showSnack("Enter valid 6-digit OTP");
+      return;
+    }
+
+    if (email.isEmpty) {
+      _showSnack("Email missing");
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+
+      final response = await AuthService.verifyOtp(
+        email: email,
+        otp: otp,
+      );
+
+      if (!mounted) return;
+
+      if (response["success"] == true) {
+
+        /////////////////////////////////////////////////////////////
+        /// SAVE LOGIN STATE (FOR SPLASH)
+        /////////////////////////////////////////////////////////////
+
+        final prefs =
+        await SharedPreferences.getInstance();
+
+        await prefs.setBool("isLoggedIn", true);
+
+        /////////////////////////////////////////////////////////////
+        /// GO TO MAIN PAGE
+        /////////////////////////////////////////////////////////////
+
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          '/main',
+              (route) => false,
+        );
+
+      } else {
+
+        _showSnack(
+          response["message"] ?? "Invalid OTP",
+        );
+      }
+
+    } catch (e) {
+      _showSnack("Network error");
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  /////////////////////////////////////////////////////////////
+  /// RESEND OTP
+  /////////////////////////////////////////////////////////////
+
+  Future<void> _resendOtp() async {
+
+    if (email.isEmpty) return;
+
+    setState(() => _isResending = true);
+
+    try {
+
+      final response =
+      await AuthService.sendOtp(email: email);
+
+      if (!mounted) return;
+
+      if (response["success"] == true) {
+        _showSnack("OTP sent again to $email");
+      } else {
+        _showSnack(
+          response["message"] ?? "Failed to resend OTP",
+        );
+      }
+
+    } catch (e) {
+      _showSnack("Network error");
+    } finally {
+      if (mounted) {
+        setState(() => _isResending = false);
+      }
+    }
+  }
+
+  /////////////////////////////////////////////////////////////
+
+  void _showSnack(String msg) {
+    ScaffoldMessenger.of(context)
+        .showSnackBar(
+      SnackBar(content: Text(msg)),
     );
   }
-}
 
-class HomePage extends StatelessWidget {
+  /////////////////////////////////////////////////////////////
 
   @override
   Widget build(BuildContext context) {
+
     return Scaffold(
       backgroundColor: Colors.black,
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // The Kanji title
-            const Text(
-              "剣心",
-              style: TextStyle(color: Colors.white, fontSize: 60, fontWeight: FontWeight.bold),
-            ),
-            const Padding(
-              padding: EdgeInsets.only(bottom: 40),
-              child: Text(
-                "HEART OF THE SWORD",
+
+      body: SafeArea(
+        child: Padding(
+          padding:
+          const EdgeInsets.symmetric(horizontal: 32),
+
+          child: Column(
+            mainAxisAlignment:
+            MainAxisAlignment.center,
+            children: [
+
+              const Text(
+                "ENTER OTP",
                 style: TextStyle(
-                  color: Colors.red,
-                  letterSpacing: 2, // Added spacing for a cinematic feel
+                  color: Colors.white,
+                  fontSize: 28,
                   fontWeight: FontWeight.bold,
                 ),
               ),
-            ),
 
-            SizedBox(
-              width: 300,
-              child: TextField(
-                cursorColor: Colors.white,
-                style: const TextStyle(color: Colors.white),
+              const SizedBox(height: 10),
+
+              Text(
+                "OTP sent to $email",
+                style: const TextStyle(
+                  color: Colors.white70,
+                ),
+                textAlign: TextAlign.center,
+              ),
+
+              const SizedBox(height: 40),
+
+              ///////////////////////////////////////////////////////
+              /// OTP FIELD
+              ///////////////////////////////////////////////////////
+
+              TextField(
+                controller: _otpController,
+                keyboardType: TextInputType.number,
+                maxLength: 6,
+                inputFormatters: [
+                  FilteringTextInputFormatter.digitsOnly,
+                ],
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Colors.white,
+                  letterSpacing: 8,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
                 decoration: InputDecoration(
-                  hintText: "ENTER THE OTP",
-                  hintStyle: const TextStyle(color: Colors.white70),
-                  prefixIcon: const Icon(Icons.password, color: Colors.white), // Fixed icon color
-                  enabledBorder: const OutlineInputBorder(
-                    borderSide: BorderSide(color: Colors.white, width: 1),
+                  counterText: "",
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius:
+                    BorderRadius.circular(12),
+                    borderSide:
+                    const BorderSide(
+                        color: Colors.white),
                   ),
-                  focusedBorder: const OutlineInputBorder(
-                    borderSide: BorderSide(color: Colors.red, width: 2), // Red border on focus
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius:
+                    BorderRadius.circular(12),
+                    borderSide:
+                    const BorderSide(
+                        color: Colors.red,
+                        width: 2),
                   ),
                 ),
               ),
-            ),
 
-            const SizedBox(height: 20), // Spacing between field and button
+              const SizedBox(height: 30),
 
-            SizedBox(
-              width: 250, // Slightly wider for the text
-              height: 50,  // Defined height for a better touch target
-              child: ElevatedButton(
-                onPressed: () {
-                  print("OTP Enterted");
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
-                ),
-                child: const Text(
-                  "ENTER OTP",
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ///////////////////////////////////////////////////////
+              /// VERIFY BUTTON
+              ///////////////////////////////////////////////////////
+
+              SizedBox(
+                width: double.infinity,
+                height: 55,
+                child: ElevatedButton(
+                  onPressed:
+                  _isLoading ? null : _verifyOtp,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red,
+                  ),
+                  child: _isLoading
+                      ? const CircularProgressIndicator(
+                    color: Colors.white,
+                  )
+                      : const Text("VERIFY OTP"),
                 ),
               ),
-            )
-          ],
+
+              const SizedBox(height: 20),
+
+              ///////////////////////////////////////////////////////
+              /// RESEND BUTTON
+              ///////////////////////////////////////////////////////
+
+              TextButton(
+                onPressed:
+                _isResending ? null : _resendOtp,
+                child: _isResending
+                    ? const CircularProgressIndicator(
+                  color: Colors.red,
+                )
+                    : const Text(
+                  "Resend OTP",
+                  style: TextStyle(
+                      color: Colors.red),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
-
-
   }
 }

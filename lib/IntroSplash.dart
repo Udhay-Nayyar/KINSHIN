@@ -2,35 +2,57 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'SignUp.dart';
 
-class Introsplash extends StatefulWidget {
+class IntroSplash extends StatefulWidget {
+  const IntroSplash({super.key});
+
   @override
-  _IntrosplashState createState() => _IntrosplashState();
+  State<IntroSplash> createState() => _IntroSplashState();
 }
 
-class _IntrosplashState extends State<Introsplash> {
+class _IntroSplashState extends State<IntroSplash> {
 
   @override
   void initState() {
     super.initState();
+    _navigate();
+  }
 
-    Timer(Duration(seconds: 5), () {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) {
-          return const SignUpPage();
-        }),
-      );
-    });
-  } // <--- The initState method must end here
+  /////////////////////////////////////////////////////////////
+  /// NAVIGATION
+  /////////////////////////////////////////////////////////////
+
+  Future<void> _navigate() async {
+
+    await Future.delayed(const Duration(seconds: 3));
+
+    if (!mounted) return; // VERY IMPORTANT SAFETY CHECK
+
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const SignUpPage(),
+      ),
+    );
+  }
+
+  /////////////////////////////////////////////////////////////
 
   @override
   Widget build(BuildContext context) {
     return const Scaffold(
-      backgroundColor: Colors.black, // Matching your Gym theme
-      body: Center(
-        child: Text(
-          'Welcome to the Gym Land',
-          style: TextStyle(color: Colors.red, fontSize: 24, fontWeight: FontWeight.bold),
+      backgroundColor: Colors.black,
+
+      body: SafeArea(
+        child: Center(
+          child: Text(
+            'Welcome to the Gym Land',
+            style: TextStyle(
+              color: Colors.red,
+              fontSize: 26,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 1.5,
+            ),
+          ),
         ),
       ),
     );
